@@ -391,14 +391,19 @@ async fn update_workspace_settings(
     settings: WorkspaceSettings,
     state: State<'_, AppState>,
 ) -> Result<WorkspaceInfo, String> {
-    let entry_snapshot = {
+    let (entry_snapshot, list) = {
         let mut workspaces = state.workspaces.lock().await;
-        let entry = workspaces.get_mut(&id).ok_or("workspace not found")?;
-        entry.settings = settings.clone();
+        let entry_snapshot = match workspaces.get_mut(&id) {
+            Some(entry) => {
+                entry.settings = settings.clone();
+                entry.clone()
+            }
+            None => return Err("workspace not found".to_string()),
+        };
         let list: Vec<_> = workspaces.values().cloned().collect();
-        write_workspaces(&state.storage_path, &list)?;
-        entry.clone()
+        (entry_snapshot, list)
     };
+    write_workspaces(&state.storage_path, &list)?;
 
     let connected = state.sessions.lock().await.contains_key(&id);
     Ok(WorkspaceInfo {

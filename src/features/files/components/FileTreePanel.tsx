@@ -6,6 +6,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import {
   ArrowLeftRight,
+  ChevronsUpDown,
   File,
   FileArchive,
   FileAudio,
@@ -239,6 +240,11 @@ export function FileTreePanel({
     };
   }, [files.length, folderPaths, nodes, normalizedQuery]);
 
+  const visibleFolderPaths = normalizedQuery ? filteredFolderPaths : folderPaths;
+  const hasFolders = visibleFolderPaths.size > 0;
+  const allVisibleExpanded =
+    hasFolders && Array.from(visibleFolderPaths).every((path) => expandedFolders.has(path));
+
   useEffect(() => {
     setExpandedFolders((prev) => {
       if (normalizedQuery) {
@@ -260,6 +266,21 @@ export function FileTreePanel({
       return next;
     });
   }, [filteredFolderPaths, folderPaths, nodes, normalizedQuery]);
+
+  const toggleAllFolders = () => {
+    if (!hasFolders) {
+      return;
+    }
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (allVisibleExpanded) {
+        visibleFolderPaths.forEach((path) => next.delete(path));
+      } else {
+        visibleFolderPaths.forEach((path) => next.add(path));
+      }
+      return next;
+    });
+  };
 
   const toggleFolder = (path: string) => {
     setExpandedFolders((prev) => {
@@ -357,14 +378,27 @@ export function FileTreePanel({
           Files
           <ArrowLeftRight className="git-panel-switch-icon" aria-hidden />
         </button>
-        <div className="file-tree-count">
-          {filteredFilesCount
-            ? normalizedQuery
-              ? `${filteredFilesCount} match${filteredFilesCount === 1 ? "" : "es"}`
-              : `${filteredFilesCount} file${filteredFilesCount === 1 ? "" : "s"}`
-            : showLoading
-              ? "Loading files"
-              : "No files"}
+        <div className="file-tree-meta">
+          <div className="file-tree-count">
+            {filteredFilesCount
+              ? normalizedQuery
+                ? `${filteredFilesCount} match${filteredFilesCount === 1 ? "" : "es"}`
+                : `${filteredFilesCount} file${filteredFilesCount === 1 ? "" : "s"}`
+              : showLoading
+                ? "Loading files"
+                : "No files"}
+          </div>
+          {hasFolders ? (
+            <button
+              type="button"
+              className="ghost icon-button file-tree-toggle"
+              onClick={toggleAllFolders}
+              aria-label={allVisibleExpanded ? "Collapse all folders" : "Expand all folders"}
+              title={allVisibleExpanded ? "Collapse all folders" : "Expand all folders"}
+            >
+              <ChevronsUpDown aria-hidden />
+            </button>
+          ) : null}
         </div>
       </div>
       <div className="file-tree-search">

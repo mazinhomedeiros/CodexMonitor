@@ -433,6 +433,7 @@ export function useThreads({
   const pinnedThreadsRef = useRef<PinnedThreadsMap>(loadPinnedThreads());
   const [pinnedThreadsVersion, setPinnedThreadsVersion] = useState(0);
   void pinnedThreadsVersion;
+  const pendingInterruptsRef = useRef<Set<string>>(new Set());
   const customNamesRef = useRef<CustomNamesMap>({});
 
   useEffect(() => {
@@ -875,6 +876,13 @@ export function useThreads({
           workspaceId,
           threadId,
         });
+        if (pendingInterruptsRef.current.has(threadId)) {
+          pendingInterruptsRef.current.delete(threadId);
+          if (turnId) {
+            void interruptTurnService(workspaceId, threadId, turnId).catch(() => {});
+          }
+          return;
+        }
         markProcessing(threadId, true);
         dispatch({ type: "clearThreadPlan", threadId });
         if (turnId) {
@@ -884,6 +892,7 @@ export function useThreads({
       onTurnCompleted: (_workspaceId: string, threadId: string, _turnId: string) => {
         markProcessing(threadId, false);
         dispatch({ type: "setActiveTurnId", threadId, turnId: null });
+        pendingInterruptsRef.current.delete(threadId);
       },
       onTurnPlanUpdated: (
         workspaceId: string,
@@ -1575,9 +1584,6 @@ export function useThreads({
       return;
     }
     const activeTurnId = state.activeTurnIdByThread[activeThreadId] ?? null;
-    if (!activeTurnId) {
-      return;
-    }
     markProcessing(activeThreadId, false);
     dispatch({ type: "setActiveTurnId", threadId: activeThreadId, turnId: null });
     dispatch({
@@ -1585,6 +1591,10 @@ export function useThreads({
       threadId: activeThreadId,
       text: "Session stopped.",
     });
+    if (!activeTurnId) {
+      pendingInterruptsRef.current.add(activeThreadId);
+      return;
+    }
     onDebug?.({
       id: `${Date.now()}-client-turn-interrupt`,
       timestamp: Date.now(),

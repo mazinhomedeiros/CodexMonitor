@@ -6,8 +6,8 @@ export function normalizeOpenAppTargets(targets: OpenAppTarget[]): OpenAppTarget
     .map((target) => ({
       ...target,
       label: target.label.trim(),
-      appName: target.appName?.trim() ?? null,
-      command: target.command?.trim() ?? null,
+      appName: (target.appName?.trim() ?? "") || null,
+      command: (target.command?.trim() ?? "") || null,
       args: Array.isArray(target.args) ? target.args.map((arg) => arg.trim()) : [],
     }))
     .filter((target) => target.label && target.id);

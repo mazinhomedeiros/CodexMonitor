@@ -15,6 +15,7 @@ type MainHeaderProps = {
   parentPath?: string | null;
   worktreePath?: string | null;
   openTargets: OpenAppTarget[];
+  openAppIconById: Record<string, string>;
   selectedOpenAppId: string;
   onSelectOpenAppId: (id: string) => void;
   branchName: string;
@@ -55,6 +56,7 @@ export function MainHeader({
   parentPath = null,
   worktreePath = null,
   openTargets,
+  openAppIconById,
   selectedOpenAppId,
   onSelectOpenAppId,
   branchName,
@@ -491,6 +493,7 @@ export function MainHeader({
           openTargets={openTargets}
           selectedOpenAppId={selectedOpenAppId}
           onSelectOpenAppId={onSelectOpenAppId}
+          iconById={openAppIconById}
         />
         {showTerminalButton && (
           <button

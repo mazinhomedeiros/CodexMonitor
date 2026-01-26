@@ -95,6 +95,7 @@ import type {
   WorkspaceInfo,
 } from "./types";
 import { OPEN_APP_STORAGE_KEY } from "./features/app/constants";
+import { useOpenAppIcons } from "./features/app/hooks/useOpenAppIcons";
 
 const AboutView = lazy(() =>
   import("./features/about/components/AboutView").then((module) => ({
@@ -742,6 +743,8 @@ function MainApp() {
     },
     [appSettings, queueSaveSettings],
   );
+
+  const openAppIconById = useOpenAppIcons(appSettings.openAppTargets);
 
   const persistProjectCopiesFolder = useCallback(
     async (groupId: string, copiesFolder: string) => {
@@ -1398,6 +1401,7 @@ function MainApp() {
     activeRateLimits,
     codeBlockCopyUseModifier: appSettings.composerCodeBlockCopyUseModifier,
     openAppTargets: appSettings.openAppTargets,
+    openAppIconById,
     selectedOpenAppId: appSettings.selectedOpenAppId,
     onSelectOpenAppId: handleSelectOpenAppId,
     approvals,
@@ -1881,6 +1885,7 @@ function MainApp() {
           reduceTransparency,
           onToggleTransparency: setReduceTransparency,
           appSettings,
+          openAppIconById,
           onUpdateAppSettings: async (next) => {
             await queueSaveSettings(next);
           },

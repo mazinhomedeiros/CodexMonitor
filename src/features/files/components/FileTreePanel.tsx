@@ -48,6 +48,7 @@ type FileTreePanelProps = {
   onFilePanelModeChange: (mode: PanelTabId) => void;
   onInsertText?: (text: string) => void;
   openTargets: OpenAppTarget[];
+  openAppIconById: Record<string, string>;
   selectedOpenAppId: string;
   onSelectOpenAppId: (id: string) => void;
 };
@@ -225,6 +226,7 @@ export function FileTreePanel({
   onFilePanelModeChange,
   onInsertText,
   openTargets,
+  openAppIconById,
   selectedOpenAppId,
   onSelectOpenAppId,
 }: FileTreePanelProps) {
@@ -624,6 +626,7 @@ export function FileTreePanel({
               previewKind={previewKind}
               imageSrc={previewImageSrc}
               openTargets={openTargets}
+              openAppIconById={openAppIconById}
               selectedOpenAppId={selectedOpenAppId}
               onSelectOpenAppId={onSelectOpenAppId}
               selection={previewSelection}

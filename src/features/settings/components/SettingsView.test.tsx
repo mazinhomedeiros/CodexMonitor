@@ -107,6 +107,7 @@ const renderDisplaySection = (
     reduceTransparency: options.reduceTransparency ?? false,
     onToggleTransparency,
     appSettings: { ...baseSettings, ...options.appSettings },
+    openAppIconById: {},
     onUpdateAppSettings,
     workspaceGroups: [],
     groupedWorkspaces: [],
@@ -296,6 +297,7 @@ describe("SettingsView Shortcuts", () => {
         reduceTransparency={false}
         onToggleTransparency={vi.fn()}
         appSettings={baseSettings}
+        openAppIconById={{}}
         onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
         onRunDoctor={vi.fn().mockResolvedValue(createDoctorResult())}
         onUpdateWorkspaceCodexBin={vi.fn().mockResolvedValue(undefined)}
@@ -334,6 +336,7 @@ describe("SettingsView Shortcuts", () => {
         reduceTransparency={false}
         onToggleTransparency={vi.fn()}
         appSettings={baseSettings}
+        openAppIconById={{}}
         onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
         onRunDoctor={vi.fn().mockResolvedValue(createDoctorResult())}
         onUpdateWorkspaceCodexBin={vi.fn().mockResolvedValue(undefined)}

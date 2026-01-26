@@ -86,12 +86,14 @@ export function useFileLinkOpener(
         return;
       }
 
-      if (target.appName) {
-        await openWorkspaceIn(resolvedPath, {
-          appName: target.appName,
-          args: target.args,
-        });
+      const appName = (target.appName || target.label || "").trim();
+      if (!appName) {
+        return;
       }
+      await openWorkspaceIn(resolvedPath, {
+        appName,
+        args: target.args,
+      });
     },
     [openTargets, selectedOpenAppId, workspacePath],
   );
@@ -106,13 +108,14 @@ export function useFileLinkOpener(
           openTargets[0]),
       };
       const resolvedPath = resolveFilePath(stripLineSuffix(rawPath), workspacePath);
+      const appName = (target.appName || target.label || "").trim();
       const openLabel =
         target.kind === "finder"
           ? revealLabel()
-          : target.appName
-            ? `Open in ${target.appName}`
-            : target.kind === "command"
-              ? `Open in ${target.label}`
+          : target.kind === "command"
+            ? `Open in ${target.label}`
+            : appName
+              ? `Open in ${appName}`
               : "Open Link";
       const items = [
         await MenuItem.new({

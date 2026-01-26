@@ -8,12 +8,7 @@ import {
   DEFAULT_OPEN_APP_TARGETS,
   OPEN_APP_STORAGE_KEY,
 } from "../constants";
-import cursorIcon from "../../../assets/app-icons/cursor.png";
-import finderIcon from "../../../assets/app-icons/finder.png";
-import antigravityIcon from "../../../assets/app-icons/antigravity.png";
-import ghosttyIcon from "../../../assets/app-icons/ghostty.png";
-import vscodeIcon from "../../../assets/app-icons/vscode.png";
-import zedIcon from "../../../assets/app-icons/zed.png";
+import { GENERIC_APP_ICON, getKnownOpenAppIcon } from "../utils/openAppIcons";
 
 type OpenTarget = {
   id: string;
@@ -27,6 +22,7 @@ type OpenAppMenuProps = {
   openTargets: OpenAppTarget[];
   selectedOpenAppId: string;
   onSelectOpenAppId: (id: string) => void;
+  iconById?: Record<string, string>;
 };
 
 export function OpenAppMenu({
@@ -34,6 +30,7 @@ export function OpenAppMenu({
   openTargets,
   selectedOpenAppId,
   onSelectOpenAppId,
+  iconById = {},
 }: OpenAppMenuProps) {
   const [openMenuOpen, setOpenMenuOpen] = useState(false);
   const openMenuRef = useRef<HTMLDivElement | null>(null);
@@ -53,28 +50,18 @@ export function OpenAppMenu({
         id: target.id,
         label: target.label,
         icon:
-          target.id === "vscode"
-            ? vscodeIcon
-            : target.id === "cursor"
-              ? cursorIcon
-              : target.id === "zed"
-                ? zedIcon
-                : target.id === "ghostty"
-                  ? ghosttyIcon
-                  : target.id === "antigravity"
-                    ? antigravityIcon
-                    : target.id === "finder"
-                      ? finderIcon
-                      : vscodeIcon,
+          getKnownOpenAppIcon(target.id) ??
+          iconById[target.id] ??
+          GENERIC_APP_ICON,
         target,
       })),
-    [availableTargets],
+    [availableTargets, iconById],
   );
 
   const fallbackTarget: OpenTarget = {
     id: DEFAULT_OPEN_APP_ID,
     label: DEFAULT_OPEN_APP_TARGETS[0]?.label ?? "Open",
-    icon: vscodeIcon,
+    icon: getKnownOpenAppIcon(DEFAULT_OPEN_APP_ID) ?? GENERIC_APP_ICON,
     target:
       DEFAULT_OPEN_APP_TARGETS[0] ?? {
         id: DEFAULT_OPEN_APP_ID,
@@ -122,11 +109,12 @@ export function OpenAppMenu({
       });
       return;
     }
-    if (!target.target.appName) {
+    const appName = target.target.appName || target.label;
+    if (!appName) {
       return;
     }
     await openWorkspaceIn(path, {
-      appName: target.target.appName,
+      appName,
       args: target.target.args,
     });
   };

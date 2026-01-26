@@ -140,6 +140,10 @@ export async function openWorkspaceIn(
   });
 }
 
+export async function getOpenAppIcon(appName: string): Promise<string | null> {
+  return invoke<string | null>("get_open_app_icon", { appName });
+}
+
 export async function connectWorkspace(id: string): Promise<void> {
   return invoke("connect_workspace", { id });
 }

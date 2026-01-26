@@ -109,6 +109,7 @@ type LayoutNodesOptions = {
   activeRateLimits: RateLimitSnapshot | null;
   codeBlockCopyUseModifier: boolean;
   openAppTargets: OpenAppTarget[];
+  openAppIconById: Record<string, string>;
   selectedOpenAppId: string;
   onSelectOpenAppId: (id: string) => void;
   approvals: ApprovalRequest[];
@@ -576,6 +577,7 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
       parentPath={options.activeParentWorkspace?.path ?? null}
       worktreePath={options.isWorktreeWorkspace ? options.activeWorkspace.path : null}
       openTargets={options.openAppTargets}
+      openAppIconById={options.openAppIconById}
       selectedOpenAppId={options.selectedOpenAppId}
       onSelectOpenAppId={options.onSelectOpenAppId}
       branchName={options.branchName}
@@ -629,6 +631,7 @@ export function useLayoutNodes(options: LayoutNodesOptions): LayoutNodesResult {
         onFilePanelModeChange={options.onFilePanelModeChange}
         onInsertText={options.onInsertComposerText}
         openTargets={options.openAppTargets}
+        openAppIconById={options.openAppIconById}
         selectedOpenAppId={options.selectedOpenAppId}
         onSelectOpenAppId={options.onSelectOpenAppId}
       />

@@ -13,6 +13,7 @@ type FilePreviewPopoverProps = {
   previewKind?: "text" | "image";
   imageSrc?: string | null;
   openTargets: OpenAppTarget[];
+  openAppIconById: Record<string, string>;
   selectedOpenAppId: string;
   onSelectOpenAppId: (id: string) => void;
   selection: { start: number; end: number } | null;
@@ -33,6 +34,7 @@ export function FilePreviewPopover({
   previewKind = "text",
   imageSrc = null,
   openTargets,
+  openAppIconById,
   selectedOpenAppId,
   onSelectOpenAppId,
   selection,
@@ -99,6 +101,7 @@ export function FilePreviewPopover({
                 openTargets={openTargets}
                 selectedOpenAppId={selectedOpenAppId}
                 onSelectOpenAppId={onSelectOpenAppId}
+                iconById={openAppIconById}
               />
             </div>
           </div>
@@ -122,6 +125,7 @@ export function FilePreviewPopover({
                 openTargets={openTargets}
                 selectedOpenAppId={selectedOpenAppId}
                 onSelectOpenAppId={onSelectOpenAppId}
+                iconById={openAppIconById}
               />
               <button
                 type="button"

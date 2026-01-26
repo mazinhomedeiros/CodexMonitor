@@ -736,12 +736,19 @@ function MainApp() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(OPEN_APP_STORAGE_KEY, id);
       }
-      void queueSaveSettings({
-        ...appSettings,
-        selectedOpenAppId: id,
+      setAppSettings((current) => {
+        if (current.selectedOpenAppId === id) {
+          return current;
+        }
+        const nextSettings = {
+          ...current,
+          selectedOpenAppId: id,
+        };
+        void queueSaveSettings(nextSettings);
+        return nextSettings;
       });
     },
-    [appSettings, queueSaveSettings],
+    [queueSaveSettings, setAppSettings],
   );
 
   const openAppIconById = useOpenAppIcons(appSettings.openAppTargets);

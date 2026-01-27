@@ -37,9 +37,26 @@ use backend::events::{AppServerEvent, EventSink, TerminalOutput};
 use storage::{read_settings, read_workspaces, write_settings, write_workspaces};
 use types::{
     AppSettings, WorkspaceEntry, WorkspaceInfo, WorkspaceKind, WorkspaceSettings, WorktreeInfo,
+    WorktreeSetupStatus,
 };
 
 const DEFAULT_LISTEN_ADDR: &str = "127.0.0.1:4732";
+const WORKTREE_SETUP_MARKER: &str = ".codex-monitor-worktree-setup.ran";
+
+fn worktree_setup_marker_path(entry: &WorkspaceEntry) -> Option<PathBuf> {
+    if !entry.kind.is_worktree() {
+        return None;
+    }
+    Some(PathBuf::from(&entry.path).join(WORKTREE_SETUP_MARKER))
+}
+
+fn normalize_setup_script(script: Option<String>) -> Option<String> {
+    match script {
+        Some(value) if value.trim().is_empty() => None,
+        Some(value) => Some(value),
+        None => None,
+    }
+}
 
 #[derive(Clone)]
 struct DaemonEventSink {
@@ -272,7 +289,12 @@ impl DaemonState {
             worktree: Some(WorktreeInfo {
                 branch: branch.to_string(),
             }),
-            settings: WorkspaceSettings::default(),
+            settings: WorkspaceSettings {
+                worktree_setup_script: normalize_setup_script(
+                    parent_entry.settings.worktree_setup_script.clone(),
+                ),
+                ..WorkspaceSettings::default()
+            },
         };
 
         let (default_bin, codex_args) = {
@@ -318,6 +340,50 @@ impl DaemonState {
             worktree: entry.worktree,
             settings: entry.settings,
         })
+    }
+
+    async fn worktree_setup_status(&self, workspace_id: String) -> Result<WorktreeSetupStatus, String> {
+        let entry = {
+            let workspaces = self.workspaces.lock().await;
+            workspaces
+                .get(&workspace_id)
+                .cloned()
+                .ok_or_else(|| "workspace not found".to_string())?
+        };
+
+        let script = normalize_setup_script(entry.settings.worktree_setup_script.clone());
+        let marker_exists = worktree_setup_marker_path(&entry)
+            .map(|path| path.exists())
+            .unwrap_or(false);
+        let should_run = entry.kind.is_worktree() && script.is_some() && !marker_exists;
+
+        Ok(WorktreeSetupStatus { should_run, script })
+    }
+
+    async fn worktree_setup_mark_ran(&self, workspace_id: String) -> Result<(), String> {
+        let entry = {
+            let workspaces = self.workspaces.lock().await;
+            workspaces
+                .get(&workspace_id)
+                .cloned()
+                .ok_or_else(|| "workspace not found".to_string())?
+        };
+        if !entry.kind.is_worktree() {
+            return Err("Not a worktree workspace.".to_string());
+        }
+        let marker_path = worktree_setup_marker_path(&entry)
+            .ok_or_else(|| "worktree marker path not found".to_string())?;
+        if let Some(parent) = marker_path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|err| format!("Failed to prepare worktree marker directory: {err}"))?;
+        }
+        let ran_at = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|duration| duration.as_secs())
+            .unwrap_or(0);
+        std::fs::write(&marker_path, format!("ran_at={ran_at}\n"))
+            .map_err(|err| format!("Failed to write worktree setup marker: {err}"))?;
+        Ok(())
     }
 
     async fn remove_workspace(&self, id: String) -> Result<(), String> {
@@ -688,12 +754,16 @@ impl DaemonState {
         settings: WorkspaceSettings,
         client_version: String,
     ) -> Result<WorkspaceInfo, String> {
+        let mut settings = settings;
+        settings.worktree_setup_script = normalize_setup_script(settings.worktree_setup_script);
+
         let (
             previous_entry,
             entry_snapshot,
             parent_entry,
             previous_codex_home,
             previous_codex_args,
+            previous_worktree_setup_script,
             child_entries,
         ) = {
             let mut workspaces = self.workspaces.lock().await;
@@ -703,6 +773,7 @@ impl DaemonState {
                 .ok_or_else(|| "workspace not found".to_string())?;
             let previous_codex_home = previous_entry.settings.codex_home.clone();
             let previous_codex_args = previous_entry.settings.codex_args.clone();
+            let previous_worktree_setup_script = previous_entry.settings.worktree_setup_script.clone();
             let entry_snapshot = match workspaces.get_mut(&id) {
                 Some(entry) => {
                     entry.settings = settings.clone();
@@ -726,12 +797,15 @@ impl DaemonState {
                 parent_entry,
                 previous_codex_home,
                 previous_codex_args,
+                previous_worktree_setup_script,
                 child_entries,
             )
         };
 
         let codex_home_changed = previous_codex_home != entry_snapshot.settings.codex_home;
         let codex_args_changed = previous_codex_args != entry_snapshot.settings.codex_args;
+        let worktree_setup_script_changed =
+            previous_worktree_setup_script != entry_snapshot.settings.worktree_setup_script;
         let connected = self.sessions.lock().await.contains_key(&id);
         if connected && (codex_home_changed || codex_args_changed) {
             let rollback_entry = previous_entry.clone();
@@ -829,6 +903,21 @@ impl DaemonState {
                 {
                     let mut child = old_session.child.lock().await;
                     let _ = child.kill().await;
+                }
+            }
+        }
+        if worktree_setup_script_changed && !entry_snapshot.kind.is_worktree() {
+            let child_ids = child_entries
+                .iter()
+                .map(|child| child.id.clone())
+                .collect::<Vec<_>>();
+            if !child_ids.is_empty() {
+                let mut workspaces = self.workspaces.lock().await;
+                for child_id in child_ids {
+                    if let Some(child) = workspaces.get_mut(&child_id) {
+                        child.settings.worktree_setup_script =
+                            entry_snapshot.settings.worktree_setup_script.clone();
+                    }
                 }
             }
         }
@@ -1769,6 +1858,16 @@ async fn handle_rpc_request(
                 .add_worktree(parent_id, branch, client_version)
                 .await?;
             serde_json::to_value(workspace).map_err(|err| err.to_string())
+        }
+        "worktree_setup_status" => {
+            let workspace_id = parse_string(&params, "workspaceId")?;
+            let status = state.worktree_setup_status(workspace_id).await?;
+            serde_json::to_value(status).map_err(|err| err.to_string())
+        }
+        "worktree_setup_mark_ran" => {
+            let workspace_id = parse_string(&params, "workspaceId")?;
+            state.worktree_setup_mark_ran(workspace_id).await?;
+            Ok(json!({ "ok": true }))
         }
         "connect_workspace" => {
             let id = parse_string(&params, "id")?;

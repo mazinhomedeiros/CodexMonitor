@@ -87,6 +87,7 @@ import { useLiquidGlassEffect } from "./features/app/hooks/useLiquidGlassEffect"
 import { useCopyThread } from "./features/threads/hooks/useCopyThread";
 import { useTerminalController } from "./features/terminal/hooks/useTerminalController";
 import { useWorkspaceLaunchScript } from "./features/app/hooks/useWorkspaceLaunchScript";
+import { useWorktreeSetupScript } from "./features/app/hooks/useWorktreeSetupScript";
 import { useGitCommitController } from "./features/app/hooks/useGitCommitController";
 import { WorkspaceHome } from "./features/workspaces/components/WorkspaceHome";
 import { useWorkspaceHome } from "./features/workspaces/hooks/useWorkspaceHome";
@@ -690,6 +691,51 @@ function MainApp() {
     }
   }, [activeWorkspace, openRenameWorktreePrompt]);
 
+  const {
+    terminalTabs,
+    activeTerminalId,
+    onSelectTerminal,
+    onNewTerminal,
+    onCloseTerminal,
+    terminalState,
+    ensureTerminalWithTitle,
+    restartTerminalSession,
+  } = useTerminalController({
+    activeWorkspaceId,
+    activeWorkspace,
+    terminalOpen,
+    onCloseTerminalPanel: closeTerminalPanel,
+    onDebug: addDebugEntry,
+  });
+
+  const ensureLaunchTerminal = useCallback(
+    (workspaceId: string) => ensureTerminalWithTitle(workspaceId, "launch", "Launch"),
+    [ensureTerminalWithTitle],
+  );
+
+  const launchScriptState = useWorkspaceLaunchScript({
+    activeWorkspace,
+    updateWorkspaceSettings,
+    openTerminal,
+    ensureLaunchTerminal,
+    restartLaunchSession: restartTerminalSession,
+    terminalState,
+    activeTerminalId,
+  });
+
+  const worktreeSetupScriptState = useWorktreeSetupScript({
+    ensureTerminalWithTitle,
+    restartTerminalSession,
+    onDebug: addDebugEntry,
+  });
+
+  const handleWorktreeCreated = useCallback(
+    async (worktree: WorkspaceInfo, _parentWorkspace?: WorkspaceInfo) => {
+      await worktreeSetupScriptState.maybeRunWorktreeSetupScript(worktree);
+    },
+    [worktreeSetupScriptState],
+  );
+
   const { exitDiffView, selectWorkspace, selectHome } = useWorkspaceSelection({
     workspaces,
     isCompact,
@@ -706,10 +752,14 @@ function MainApp() {
     confirmPrompt: confirmWorktreePrompt,
     cancelPrompt: cancelWorktreePrompt,
     updateBranch: updateWorktreeBranch,
+    updateSetupScript: updateWorktreeSetupScript,
+    saveSetupScript: saveWorktreeSetupScript,
   } = useWorktreePrompt({
     addWorktreeAgent,
+    updateWorkspaceSettings,
     connectWorkspace,
     onSelectWorkspace: selectWorkspace,
+    onWorktreeCreated: handleWorktreeCreated,
     onCompactActivate: isCompact ? () => setActiveTab("codex") : undefined,
     onError: (message) => {
       addDebugEntry({
@@ -958,6 +1008,7 @@ function MainApp() {
     connectWorkspace,
     startThreadForWorkspace,
     sendUserMessageToThread,
+    onWorktreeCreated: handleWorktreeCreated,
   });
 
   const {
@@ -1318,37 +1369,6 @@ function MainApp() {
     ? centerMode === "chat" || centerMode === "diff"
     : (isTablet ? tabletTab : activeTab) === "codex") && !showWorkspaceHome;
   const showGitDetail = Boolean(selectedDiffPath) && isPhone;
-  const {
-    terminalTabs,
-    activeTerminalId,
-    onSelectTerminal,
-    onNewTerminal,
-    onCloseTerminal,
-    terminalState,
-    ensureTerminalWithTitle,
-    restartTerminalSession,
-  } = useTerminalController({
-    activeWorkspaceId,
-    activeWorkspace,
-    terminalOpen,
-    onCloseTerminalPanel: closeTerminalPanel,
-    onDebug: addDebugEntry,
-  });
-
-  const ensureLaunchTerminal = useCallback(
-    (workspaceId: string) => ensureTerminalWithTitle(workspaceId, "launch", "Launch"),
-    [ensureTerminalWithTitle],
-  );
-
-  const launchScriptState = useWorkspaceLaunchScript({
-    activeWorkspace,
-    updateWorkspaceSettings,
-    openTerminal,
-    ensureLaunchTerminal,
-    restartLaunchSession: restartTerminalSession,
-    terminalState,
-    activeTerminalId,
-  });
 
   const { handleCycleAgent, handleCycleWorkspace } = useWorkspaceCycling({
     workspaces,
@@ -1904,6 +1924,10 @@ function MainApp() {
         onRenamePromptConfirm={handleRenamePromptConfirm}
         worktreePrompt={worktreePrompt}
         onWorktreePromptChange={updateWorktreeBranch}
+        onWorktreeSetupScriptChange={updateWorktreeSetupScript}
+        onWorktreeSetupScriptSave={() => {
+          void saveWorktreeSetupScript();
+        }}
         onWorktreePromptCancel={cancelWorktreePrompt}
         onWorktreePromptConfirm={confirmWorktreePrompt}
         clonePrompt={clonePrompt}

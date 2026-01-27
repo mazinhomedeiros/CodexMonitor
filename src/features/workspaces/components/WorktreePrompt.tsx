@@ -3,23 +3,41 @@ import { useEffect, useRef } from "react";
 type WorktreePromptProps = {
   workspaceName: string;
   branch: string;
+  setupScript: string;
+  savedSetupScript: string | null;
+  scriptError?: string | null;
   error?: string | null;
   onChange: (value: string) => void;
+  onSetupScriptChange: (value: string) => void;
+  onSaveSetupScript: () => void;
   onCancel: () => void;
   onConfirm: () => void;
   isBusy?: boolean;
+  isSavingScript?: boolean;
 };
+
+function normalizeScript(value: string | null | undefined): string | null {
+  const next = value ?? "";
+  return next.trim().length > 0 ? next : null;
+}
 
 export function WorktreePrompt({
   workspaceName,
   branch,
+  setupScript,
+  savedSetupScript,
+  scriptError = null,
   error = null,
   onChange,
+  onSetupScriptChange,
+  onSaveSetupScript,
   onCancel,
   onConfirm,
   isBusy = false,
+  isSavingScript = false,
 }: WorktreePromptProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const scriptChanged = normalizeScript(setupScript) !== savedSetupScript;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -63,6 +81,31 @@ export function WorktreePrompt({
             }
           }}
         />
+        <div className="worktree-modal-divider" />
+        <div className="worktree-modal-section-title">Worktree setup script</div>
+        <div className="worktree-modal-hint">
+          Runs once in a dedicated terminal after each new worktree is created.
+        </div>
+        <textarea
+          id="worktree-setup-script"
+          className="worktree-modal-textarea"
+          value={setupScript}
+          onChange={(event) => onSetupScriptChange(event.target.value)}
+          placeholder="pnpm install"
+          rows={4}
+          disabled={isBusy || isSavingScript}
+        />
+        <div className="worktree-modal-inline-actions">
+          <button
+            className="ghost worktree-modal-button"
+            onClick={onSaveSetupScript}
+            type="button"
+            disabled={isBusy || isSavingScript || !scriptChanged}
+          >
+            {isSavingScript ? "Saving…" : scriptChanged ? "Save script" : "Saved"}
+          </button>
+        </div>
+        {scriptError && <div className="worktree-modal-error">{scriptError}</div>}
         {error && <div className="worktree-modal-error">{error}</div>}
         <div className="worktree-modal-actions">
           <button

@@ -114,7 +114,7 @@ rustup target add x86_64-apple-ios
 ```
 
 - Apple signing configured (development team).
-  - Set `bundle.iOS.developmentTeam` in `src-tauri/tauri.conf.json`, or
+  - Set `bundle.iOS.developmentTeam` in `src-tauri/tauri.ios.conf.json` (preferred), or
   - pass `--team <TEAM_ID>` to the device script.
 
 ### Run on iOS Simulator
@@ -221,6 +221,17 @@ Or use npm scripts directly:
 npm run tauri:dev:android
 npm run tauri:build:android
 ```
+
+### iOS TestFlight Release (Scripted)
+
+Use the end-to-end script to archive, upload, configure compliance, assign beta group, and submit for beta review.
+
+```bash
+./scripts/release_testflight_ios.sh
+```
+
+The script auto-loads release metadata from `.testflight.local.env` (gitignored).
+For new setups, copy `.testflight.local.env.example` to `.testflight.local.env` and fill values.
 
 ## Release Build
 

@@ -30,3 +30,35 @@ public/assets/material-icons/
 
 # Nix
 result
+
+# Rust / Tauri
+src-tauri/target/
+*.exe
+*.dll
+*.so
+*.dylib
+Cargo.lock
+
+# Android build
+src-tauri/gen/android/app/build/
+src-tauri/gen/android/.gradle/
+src-tauri/gen/android/gradle/
+src-tauri/gen/android/gradlew*
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Local configs (paths específicos da máquina)
+# src-tauri/.cargo/config.toml
+
+# Test artifacts
+*.profraw
+*.gcda
+*.gcno
+coverage/
+
+# Environment
+.env
+.env.local
+.env.*.local

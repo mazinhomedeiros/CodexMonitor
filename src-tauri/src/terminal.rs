@@ -50,7 +50,11 @@ async fn get_terminal_session(
 }
 
 fn shell_path() -> String {
-    std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string())
+    if cfg!(target_os = "windows") {
+        std::env::var("COMSPEC").unwrap_or_else(|_| "cmd.exe".to_string())
+    } else {
+        std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string())
+    }
 }
 
 fn resolve_locale() -> String {
@@ -179,12 +183,16 @@ pub(crate) async fn terminal_open(
 
     let mut cmd = CommandBuilder::new(shell_path());
     cmd.cwd(cwd);
-    cmd.arg("-i");
+    if !cfg!(target_os = "windows") {
+        cmd.arg("-i");
+    }
     cmd.env("TERM", "xterm-256color");
-    let locale = resolve_locale();
-    cmd.env("LANG", &locale);
-    cmd.env("LC_ALL", &locale);
-    cmd.env("LC_CTYPE", &locale);
+    if !cfg!(target_os = "windows") {
+        let locale = resolve_locale();
+        cmd.env("LANG", &locale);
+        cmd.env("LC_ALL", &locale);
+        cmd.env("LC_CTYPE", &locale);
+    }
 
     let child = pair
         .slave

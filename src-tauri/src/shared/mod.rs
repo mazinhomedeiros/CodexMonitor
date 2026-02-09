@@ -3,6 +3,10 @@ pub(crate) mod codex_aux_core;
 pub(crate) mod codex_core;
 pub(crate) mod files_core;
 pub(crate) mod git_core;
+#[cfg(desktop)]
+pub(crate) mod git_ui_core;
+#[cfg(not(desktop))]
+#[path = "git_ui_core_mobile.rs"]
 pub(crate) mod git_ui_core;
 pub(crate) mod local_usage_core;
 pub(crate) mod orbit_core;

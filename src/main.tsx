@@ -17,7 +17,7 @@ Sentry.init({
 Sentry.metrics.count("app_open", 1, {
   attributes: {
     env: import.meta.env.MODE,
-    platform: "macos",
+    platform: isMobilePlatform() ? "mobile" : (navigator?.platform ?? "unknown"),
   },
 });
 

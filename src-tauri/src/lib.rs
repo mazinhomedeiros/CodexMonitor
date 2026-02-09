@@ -96,8 +96,10 @@ pub fn run() {
     #[cfg(desktop)]
     let builder = builder.plugin(tauri_plugin_window_state::Builder::default().build());
 
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_liquid_glass::init());
+
     let app = builder
-        .plugin(tauri_plugin_liquid_glass::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init())

@@ -162,6 +162,66 @@ If signing is not ready yet, open Xcode from the script flow:
 ./scripts/build_run_ios_device.sh --open-xcode
 ```
 
+## Android Support (WIP)
+
+Android support is currently in progress.
+
+- Current status: mobile layout runs, remote backend flow is wired, and Android defaults to remote backend mode (same as iOS).
+- Current limits: terminal and dictation remain unavailable on mobile builds.
+- Desktop behavior is unchanged: macOS/Linux/Windows remain local-first unless remote mode is explicitly selected.
+
+### Android + Tailscale Setup (TCP)
+
+Use this when connecting the Android app to a desktop-hosted daemon over your Tailscale tailnet.
+
+1. Install and sign in to Tailscale on both desktop and Android device (same tailnet).
+2. On desktop CodexMonitor, open `Settings > Server`.
+3. Keep `Remote provider` set to `TCP (wip)`.
+4. Set a `Remote backend token`.
+5. Start the desktop daemon with `Start daemon` (in `Mobile access daemon`).
+6. In `Tailscale helper`, use `Detect Tailscale` and note the suggested host (for example `your-mac.your-tailnet.ts.net:4732`).
+7. On Android CodexMonitor, open `Settings > Server`.
+8. Set `Connection type` to `TCP`.
+9. Enter the desktop Tailscale host and the same token.
+10. Tap `Connect & test` and confirm it succeeds.
+
+Notes:
+
+- The desktop daemon must stay running while Android is connected.
+- If the test fails, confirm both devices are online in Tailscale and that host/token match desktop settings.
+- If you want to use Orbit instead of Tailscale TCP, switch `Connection type` to `Orbit` on Android and use your desktop Orbit websocket URL/token.
+
+### Android Prerequisites
+
+- Android Studio with SDK and NDK installed.
+- JDK 17+.
+- `ANDROID_HOME` and `NDK_HOME` environment variables set.
+- Rust Android targets installed:
+
+```bash
+rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
+```
+
+### Run on Android Emulator or Device
+
+```bash
+./scripts/build_run_android.sh
+```
+
+Options:
+
+- `--target <target>` to select architecture (`aarch64`, `armv7`, `x86_64`, `i686`; default: `aarch64`).
+- `--release` to build in release mode.
+- `--skip-build` to reuse the existing APK.
+- `--open` to open the Android project in Android Studio.
+
+Or use npm scripts directly:
+
+```bash
+npm run tauri:dev:android
+npm run tauri:build:android
+```
+
 ## Release Build
 
 Build the production Tauri bundle:

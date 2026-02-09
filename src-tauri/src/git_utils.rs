@@ -1,10 +1,13 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+#[cfg(desktop)]
 use git2::{DiffOptions, Repository, Tree};
 use ignore::WalkBuilder;
 
-use crate::types::{GitLogEntry, WorkspaceEntry};
+#[cfg(desktop)]
+use crate::types::GitLogEntry;
+use crate::types::WorkspaceEntry;
 use crate::utils::normalize_git_path;
 
 pub(crate) fn image_mime_type(path: &str) -> Option<&'static str> {
@@ -24,6 +27,7 @@ pub(crate) fn image_mime_type(path: &str) -> Option<&'static str> {
     }
 }
 
+#[cfg(desktop)]
 pub(crate) fn commit_to_entry(commit: git2::Commit) -> GitLogEntry {
     let summary = commit.summary().unwrap_or("").to_string();
     let author = commit.author().name().unwrap_or("").to_string();
@@ -36,6 +40,7 @@ pub(crate) fn commit_to_entry(commit: git2::Commit) -> GitLogEntry {
     }
 }
 
+#[cfg(desktop)]
 pub(crate) fn checkout_branch(repo: &Repository, name: &str) -> Result<(), git2::Error> {
     let refname = format!("refs/heads/{name}");
     let target = repo.revparse_single(&refname)?;
@@ -47,6 +52,7 @@ pub(crate) fn checkout_branch(repo: &Repository, name: &str) -> Result<(), git2:
     Ok(())
 }
 
+#[cfg(desktop)]
 pub(crate) fn diff_stats_for_path(
     repo: &Repository,
     head_tree: Option<&Tree>,
@@ -82,6 +88,7 @@ pub(crate) fn diff_stats_for_path(
     Ok((additions, deletions))
 }
 
+#[cfg(desktop)]
 pub(crate) fn diff_patch_to_string(patch: &mut git2::Patch) -> Result<String, git2::Error> {
     let buf = patch.to_buf()?;
     Ok(buf
@@ -92,7 +99,10 @@ pub(crate) fn diff_patch_to_string(patch: &mut git2::Patch) -> Result<String, gi
 
 #[cfg(test)]
 mod tests {
-    use super::{checkout_branch, image_mime_type};
+    use super::image_mime_type;
+    #[cfg(desktop)]
+    use super::checkout_branch;
+    #[cfg(desktop)]
     use git2::Repository;
     use std::fs;
     use std::path::Path;
@@ -106,6 +116,7 @@ mod tests {
         assert_eq!(image_mime_type("readme.txt"), None);
     }
 
+    #[cfg(desktop)]
     #[test]
     fn checkout_branch_missing_does_not_change_head() {
         let root = std::env::temp_dir().join(format!(

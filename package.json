@@ -33,7 +33,9 @@
     "pretauri:dev:win": "npm run sync:material-icons",
     "tauri:dev:win": "npm run doctor:win && tauri dev --config src-tauri/tauri.windows.conf.json",
     "pretauri:build:win": "npm run sync:material-icons",
-    "tauri:build:win": "npm run doctor:win && tauri build --config src-tauri/tauri.windows.conf.json"
+    "tauri:build:win": "npm run doctor:win && tauri build --config src-tauri/tauri.windows.conf.json",
+    "tauri:dev:android": "tauri android dev --config src-tauri/tauri.android.conf.json",
+    "tauri:build:android": "tauri android build --config src-tauri/tauri.android.conf.json"
   },
   "dependencies": {
     "@pierre/diffs": "^1.0.6",

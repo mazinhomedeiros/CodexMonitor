@@ -128,3 +128,17 @@ netstat -ano | Select-String "4732"
 # From another machine
 Test-NetConnection -ComputerName <remote-ip> -Port 4732
 ```
+
+## To fetch from upstream
+
+```powershell
+git fetch upstream
+git merge upstream/main
+```
+# Solve conflicts, if any
+```powershell
+git push origin main
+```
+
+
+
